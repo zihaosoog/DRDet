@@ -1,0 +1,120 @@
+# nanodet-plus-m-1.5x_640
+# COCO mAP(0.5:0.95) = 0.341
+#             AP_50  = 0.506
+#             AP_75  = 0.357
+#           AP_small = 0.143
+#               AP_m = 0.363
+#               AP_l = 0.539
+# anchor: 3,4, 4,9, 8,6, 7,14, 15,9, 15,19, 31,17, 25,37, 55,42
+
+save_dir: log/nanodet-plus-m-1.5x_640-uavdt-plus-refine-head-cuv2
+model:
+  weight_averager:
+    name: ExpMovingAverager
+    decay: 0.9998
+  arch:
+    name: NanoDetPlus
+    detach_epoch: 10
+    backbone:
+      name: ShuffleNetV2
+      model_size: 1.5x
+      out_stages: [2,3,4]
+      activation: LeakyReLU
+    fpn:
+      name: GhostPAN
+      in_channels: [176, 352, 704]
+      out_channels: 128
+      kernel_size: 5
+      num_extra_level: 1
+      use_depthwise: True
+      activation: LeakyReLU
+    head:
+      name: NanoDetHeadRFCU
+      num_classes: 1
+      input_channel: 128
+      feat_channels: 128
+      stacked_convs: 2
+      kernel_size: 5
+      strides: [8, 16, 32, 64]
+      activation: LeakyReLU
+      reg_max: 7
+      norm_cfg:
+        type: BN
+      loss:
+        loss_qfl:
+          name: QualityFocalLoss
+          use_sigmoid: True
+          beta: 2.0
+          loss_weight: 1.0
+        loss_dfl:
+          name: DistributionFocalLoss
+          loss_weight: 0.25
+        loss_bbox:
+          name: GIoULoss
+          loss_weight: 2.0
+    # Auxiliary head, only use in training time.
+    aux_head:
+      name: SimpleConvHeadAT
+      num_classes: 1
+      input_channel: 256
+      feat_channels: 256
+      stacked_convs: 4
+      strides: [8, 16, 32, 64]
+      activation: LeakyReLU
+      reg_max: 7
+data:
+  train:
+    name: CocoDataset
+    img_path: /home/ccaj/zhsong/datasets/UAVDTM/images/train/
+    ann_path: /home/ccaj/zhsong/datasets/UAVDTM/annotations/train.json
+    input_size: [640,640] #[w,h]
+    keep_ratio: False
+    pipeline:
+      perspective: 0.0
+      scale: [0.6, 1.4]
+      stretch: [[0.8, 1.2], [0.8, 1.2]]
+      rotation: 0
+      shear: 0
+      translate: 0.2
+      flip: 0.5
+      brightness: 0.2
+      contrast: [0.6, 1.4]
+      saturation: [0.5, 1.2]
+      normalize: [[103.53, 116.28, 123.675], [57.375, 57.12, 58.395]]
+  val:
+    name: CocoDataset
+    img_path: /home/ccaj/zhsong/datasets/UAVDTM/images/val/
+    ann_path: /home/ccaj/zhsong/datasets/UAVDTM/annotations/val.json
+    input_size: [640,640] #[w,h]
+    keep_ratio: False
+    pipeline:
+      normalize: [[103.53, 116.28, 123.675], [57.375, 57.12, 58.395]]
+device:
+  gpu_ids: [0]
+  workers_per_gpu: 10
+  batchsize_per_gpu: 8
+schedule:
+  # resume: model_last.ckpt
+  load_model: nanodet-plus-m-1.5x_416_checkpoint.ckpt
+  optimizer:
+    name: AdamW
+    lr: 0.0001 #0.001/96*72
+    weight_decay: 0.05
+  warmup:
+    name: linear
+    steps: 500
+    ratio: 0.0001
+  total_epochs: 300
+  lr_schedule:
+    name: CosineAnnealingLR
+    T_max: 300
+    eta_min: 0.00005
+  val_intervals: 10
+grad_clip: 35
+evaluator:
+  name: CocoDetectionEvaluator
+  save_key: mAP
+log:
+  interval: 50
+
+class_names: ['car']

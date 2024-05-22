@@ -13,6 +13,13 @@
 | YOLOv8s   | 11.2     | 24.21  | 41.43   |         |         |         |         |
 | NaNoDet Plus | 7.8      |26.81  |44.10  |27.52  |16.21  |41.23  |51.09  |
 | DRDet (ours) | 10.9     |**28.32**  |**45.84**  |**29.03**  |**17.38**  |**42.66**  |**50.91**  |
+
+模型在2080Ti上的推理耗时 FP32/wo TensorRT
+| 模型 | 平均推理耗时（秒） |
+|---|---|
+| baseline | 0.0185 |
+| ours | 0.054 |
+
 ****
 ### Requirements
 
@@ -65,7 +72,12 @@ python setup.py develop
     
     If you want to ignore images with annotations set it add `--ignore_negative_samples` argument.
 
+4. **Test and Vis**
 
+   ```bash
+   python demo/demo.py --demo image --config ./config/nanodet-plus-m-1.5x_416.yml --model ./nanodet-plus-m-1.5x_416_checkpoint.ckpt --path ./inferimgs
+
+   ```
 
 
 

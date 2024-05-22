@@ -21,7 +21,7 @@
 | ours | 0.0544 |
 
 ****
-### Requirements
+## Requirements
 
 * Linux or MacOS
 * CUDA >= 10.0
